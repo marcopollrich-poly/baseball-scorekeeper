@@ -1,0 +1,1886 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Baseball Scorekeeper 2.0</title>
+
+<style>
+*{box-sizing:border-box}
+
+:root{
+    --bg:#07111c;
+    --panel:#102131;
+    --panel2:#162c40;
+    --line:#315069;
+    --green:#19d86b;
+    --yellow:#ffd43b;
+    --red:#ff4757;
+    --blue:#3da5ff;
+    --white:#f5f7fa;
+    --muted:#8fa5b8;
+}
+
+body{
+    margin:0;
+    background:radial-gradient(circle at top,#173b55,#07111c 65%);
+    color:var(--white);
+    font-family:Arial,Helvetica,sans-serif;
+}
+
+.app{
+    max-width:1450px;
+    margin:auto;
+    padding:18px;
+}
+
+header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:15px;
+    margin-bottom:16px;
+}
+
+h1{margin:0;font-size:30px}
+h2{margin-top:0}
+h3{margin-top:0}
+
+.subtitle{
+    color:var(--muted);
+    margin-top:4px;
+}
+
+button{
+    border:0;
+    border-radius:9px;
+    padding:11px 15px;
+    margin:3px;
+    color:white;
+    background:#29475f;
+    cursor:pointer;
+    font-weight:bold;
+}
+
+button:hover{
+    filter:brightness(1.2);
+}
+
+.green{background:#159957}
+.red{background:#c92e3c}
+.blue{background:#1676bd}
+.yellow{
+    background:var(--yellow);
+    color:#111;
+}
+
+.panel{
+    background:rgba(16,33,49,.97);
+    border:1px solid var(--line);
+    border-radius:15px;
+    padding:17px;
+    margin-bottom:16px;
+    box-shadow:0 8px 25px rgba(0,0,0,.2);
+}
+
+.top-buttons{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:flex-end;
+}
+
+.scoreboard{
+    overflow-x:auto;
+}
+
+.score-table{
+    width:100%;
+    min-width:800px;
+    border-collapse:collapse;
+}
+
+.score-table th,
+.score-table td{
+    border:1px solid var(--line);
+    padding:12px 9px;
+    text-align:center;
+}
+
+.score-table th{
+    background:#172e42;
+}
+
+.team-cell{
+    text-align:left!important;
+    min-width:160px;
+}
+
+.team-input{
+    width:140px;
+    max-width:100%;
+    padding:8px;
+    border-radius:7px;
+    border:1px solid #48647a;
+    background:#07131e;
+    color:white;
+}
+
+.total{
+    color:var(--green);
+    font-size:23px;
+    font-weight:bold;
+}
+
+.active{
+    background:var(--yellow)!important;
+    color:#111;
+}
+
+.game-info{
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:10px;
+    margin-top:14px;
+}
+
+.info{
+    background:#081621;
+    border-radius:10px;
+    text-align:center;
+    padding:12px;
+}
+
+.info-label{
+    color:var(--muted);
+    font-size:12px;
+}
+
+.info-value{
+    font-size:26px;
+    font-weight:bold;
+    margin-top:5px;
+}
+
+.layout{
+    display:grid;
+    grid-template-columns:1.15fr .85fr;
+    gap:16px;
+}
+
+.actions{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:7px;
+}
+
+.actions button{
+    min-height:50px;
+}
+
+.play{
+    background:#116c9d;
+}
+
+.play.home{
+    background:#b42535;
+}
+
+.play.hr{
+    background:#159957;
+}
+
+.play.out{
+    background:#6c3e88;
+}
+
+.play.walk{
+    background:#b17d10;
+}
+
+.count{
+    display:flex;
+    justify-content:center;
+    gap:35px;
+    margin:18px 0;
+}
+
+.count-item{
+    text-align:center;
+}
+
+.count-number{
+    font-size:44px;
+    font-weight:bold;
+}
+
+.count-label{
+    color:var(--muted);
+}
+
+.bases{
+    width:310px;
+    height:310px;
+    max-width:90%;
+    margin:15px auto;
+    position:relative;
+    background:#3d994d;
+    clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);
+}
+
+.diamond{
+    position:absolute;
+    width:135px;
+    height:135px;
+    left:87px;
+    top:87px;
+    transform:rotate(45deg);
+    background:#b67b42;
+    border:3px solid #d29a5b;
+}
+
+.base{
+    width:38px;
+    height:38px;
+    position:absolute;
+    background:white;
+    border:4px solid #222;
+    transform:rotate(45deg);
+    cursor:pointer;
+    z-index:2;
+}
+
+.base span{
+    display:block;
+    transform:rotate(-45deg);
+    color:#111;
+    text-align:center;
+    margin-top:7px;
+    font-size:10px;
+    font-weight:bold;
+}
+
+.base.occupied{
+    background:var(--yellow);
+}
+
+.b1{right:29px;top:136px}
+.b2{left:136px;top:29px}
+.b3{left:29px;top:136px}
+
+.home{
+    position:absolute;
+    width:40px;
+    height:40px;
+    left:134px;
+    bottom:25px;
+    background:white;
+    border:4px solid #222;
+    clip-path:polygon(0 0,100% 0,100% 65%,50% 100%,0 65%);
+}
+
+.current-player{
+    text-align:center;
+    background:#081621;
+    padding:13px;
+    border-radius:10px;
+    margin-bottom:10px;
+}
+
+.player-name{
+    font-size:25px;
+    font-weight:bold;
+    color:var(--yellow);
+}
+
+.lineups{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:15px;
+}
+
+.player{
+    display:flex;
+    gap:5px;
+    margin-bottom:6px;
+}
+
+.player input{
+    flex:1;
+    min-width:0;
+    background:#07131e;
+    color:white;
+    border:1px solid #355168;
+    border-radius:7px;
+    padding:8px;
+}
+
+.player button{
+    width:40px;
+    padding:5px;
+}
+
+.player.active-player input{
+    border:2px solid var(--yellow);
+}
+
+.history{
+    max-height:240px;
+    overflow:auto;
+    background:#07131e;
+    border-radius:9px;
+    padding:8px;
+}
+
+.history div{
+    padding:7px;
+    border-bottom:1px solid #20394d;
+    color:#cdd8e1;
+}
+
+.modal{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.8);
+    z-index:100;
+    align-items:center;
+    justify-content:center;
+}
+
+.modal.show{
+    display:flex;
+}
+
+.modal-box{
+    background:#102131;
+    border:1px solid #48657b;
+    border-radius:15px;
+    width:500px;
+    max-width:94%;
+    padding:22px;
+}
+
+.modal-box h2{
+    color:var(--yellow);
+}
+
+.modal-buttons{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+}
+
+@media(max-width:950px){
+    .layout{
+        grid-template-columns:1fr;
+    }
+}
+
+@media(max-width:700px){
+    header{
+        flex-direction:column;
+        align-items:flex-start;
+    }
+
+    .game-info{
+        grid-template-columns:repeat(2,1fr);
+    }
+
+    .actions{
+        grid-template-columns:repeat(2,1fr);
+    }
+
+    .lineups{
+        grid-template-columns:1fr;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+<header>
+
+<div>
+<h1>⚾ Baseball Scorekeeper 2.0</h1>
+<div class="subtitle">Automatischer digitaler Spielstand</div>
+</div>
+
+<div class="top-buttons">
+<button class="blue" onclick="undo()">↩ Undo</button>
+<button onclick="saveGame()">💾 Speichern</button>
+<button onclick="loadGame()">📂 Laden</button>
+<button class="red" onclick="newGame()">🗑 Neues Spiel</button>
+</div>
+
+</header>
+
+
+<!-- SCOREBOARD -->
+
+<div class="panel scoreboard">
+
+<table class="score-table">
+
+<thead>
+<tr id="scoreHeader">
+<th>Team</th>
+</tr>
+</thead>
+
+<tbody>
+
+<tr id="awayRow">
+<th class="team-cell">
+<input id="awayName"
+class="team-input"
+value="AWAY"
+oninput="update()">
+</th>
+</tr>
+
+<tr id="homeRow">
+<th class="team-cell">
+<input id="homeName"
+class="team-input"
+value="HOME"
+oninput="update()">
+</th>
+</tr>
+
+</tbody>
+</table>
+
+<div class="game-info">
+
+<div class="info">
+<div class="info-label">INNING</div>
+<div class="info-value" id="inning">1</div>
+</div>
+
+<div class="info">
+<div class="info-label">HALB</div>
+<div class="info-value" id="half">TOP</div>
+</div>
+
+<div class="info">
+<div class="info-label">AM SCHLAG</div>
+<div class="info-value" id="batting">AWAY</div>
+</div>
+
+<div class="info">
+<div class="info-label">PITCHES</div>
+<div class="info-value" id="pitches">0</div>
+</div>
+
+<div class="info">
+<div class="info-label">COUNT</div>
+<div class="info-value" id="count">0-0</div>
+</div>
+
+</div>
+
+</div>
+
+
+<div class="layout">
+
+<div>
+
+
+<!-- SPIELZÜGE -->
+
+<div class="panel">
+
+<h2>⚾ Spielzug</h2>
+
+<div class="current-player">
+<div>Aktueller Batter</div>
+<div class="player-name" id="batterName">Spieler 1</div>
+</div>
+
+<div class="count">
+
+<div class="count-item">
+<div class="count-number" id="balls">0</div>
+<div class="count-label">BALLS</div>
+</div>
+
+<div class="count-item">
+<div class="count-number" id="strikes">0</div>
+<div class="count-label">STRIKES</div>
+</div>
+
+<div class="count-item">
+<div class="count-number" id="outs">0</div>
+<div class="count-label">OUTS</div>
+</div>
+
+</div>
+
+
+<h3>At Bat</h3>
+
+<div class="actions">
+
+<button class="play"
+onclick="single()">⚾ SINGLE</button>
+
+<button class="play"
+onclick="doubleHit()">⚾ DOUBLE</button>
+
+<button class="play"
+onclick="triple()">⚾ TRIPLE</button>
+
+<button class="play hr"
+onclick="homeRun()">🏠 HOME RUN</button>
+
+<button class="play walk"
+onclick="walk()">🚶 WALK</button>
+
+<button class="play out"
+onclick="strikeout()">❌ STRIKEOUT</button>
+
+<button class="play out"
+onclick="groundout()">🥎 GROUNDOUT</button>
+
+<button class="play out"
+onclick="flyout()">🥎 FLYOUT</button>
+
+<button class="play"
+onclick="sacFly()">🏃 SAC FLY</button>
+
+<button class="play"
+onclick="errorPlay()">⚠ ERROR</button>
+
+</div>
+
+</div>
+
+
+<!-- COUNT -->
+
+<div class="panel">
+
+<h2>🎯 Pitch Count</h2>
+
+<div class="actions">
+
+<button onclick="ball()">Ball</button>
+<button onclick="strike()">Strike</button>
+<button onclick="foul()">Foul</button>
+
+</div>
+
+<br>
+
+<div class="actions">
+
+<button onclick="manualOut()">Out</button>
+<button onclick="nextBatter()">➡ Nächster Batter</button>
+<button onclick="changeHalf()">🔄 Halb-Inning</button>
+
+</div>
+
+</div>
+
+
+<!-- BASES -->
+
+<div class="panel">
+
+<h2>💎 Bases</h2>
+
+<div class="bases">
+
+<div class="diamond"></div>
+
+<div id="base1"
+class="base b1"
+onclick="toggleBase(1)">
+<span>1B</span>
+</div>
+
+<div id="base2"
+class="base b2"
+onclick="toggleBase(2)">
+<span>2B</span>
+</div>
+
+<div id="base3"
+class="base b3"
+onclick="toggleBase(3)">
+<span>3B</span>
+</div>
+
+<div class="home"></div>
+
+</div>
+
+<p style="text-align:center;color:#91a7b8">
+Gelbe Base = Läufer steht dort.
+</p>
+
+</div>
+
+</div>
+
+
+<!-- RECHTE SPALTE -->
+
+<div>
+
+
+<!-- LINEUP -->
+
+<div class="panel">
+
+<h2>👥 Lineup</h2>
+
+<div class="lineups">
+
+<div>
+
+<h3 id="awayTitle">AWAY</h3>
+
+<div id="awayLineup"></div>
+
+<button onclick="addPlayer('away')">
++ Spieler
+</button>
+
+</div>
+
+<div>
+
+<h3 id="homeTitle">HOME</h3>
+
+<div id="homeLineup"></div>
+
+<button onclick="addPlayer('home')">
++ Spieler
+</button>
+
+</div>
+
+</div>
+
+</div>
+
+
+<!-- PITCHER -->
+
+<div class="panel">
+
+<h2>🧑 Pitcher</h2>
+
+<input
+id="pitcher"
+value="Pitcher 1"
+style="
+width:100%;
+padding:10px;
+background:#07131e;
+color:white;
+border:1px solid #355168;
+border-radius:8px;
+"
+oninput="game.pitcher=this.value"
+>
+
+</div>
+
+
+<!-- VERLAUF -->
+
+<div class="panel">
+
+<h2>📜 Spielverlauf</h2>
+
+<div id="history" class="history"></div>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+
+<!-- RUNNER ENTSCHEIDUNG -->
+
+<div id="runnerModal" class="modal">
+
+<div class="modal-box">
+
+<h2>🏃 Runner auf 3B</h2>
+
+<p>
+Es befindet sich ein Runner auf der dritten Base.
+</p>
+
+<p>
+Soll der Runner beim Spielzug punkten?
+</p>
+
+<div class="modal-buttons">
+
+<button class="green"
+onclick="runnerScores()">
+🏠 Run
+</button>
+
+<button
+onclick="runnerStays()">
+🛑 Bleibt auf 3B
+</button>
+
+</div>
+
+</div>
+
+</div>
+
+
+<script>
+
+let game = {
+    inning:1,
+    half:"TOP",
+
+    balls:0,
+    strikes:0,
+    outs:0,
+    pitches:0,
+
+    awayRuns:Array(9).fill(0),
+    homeRuns:Array(9).fill(0),
+
+    awayHits:0,
+    homeHits:0,
+
+    awayErrors:0,
+    homeErrors:0,
+
+    bases:{
+        1:false,
+        2:false,
+        3:false
+    },
+
+    awayBatter:0,
+    homeBatter:0,
+
+    pitcher:"Pitcher 1",
+
+    awayLineup:[
+        "Spieler 1",
+        "Spieler 2",
+        "Spieler 3",
+        "Spieler 4",
+        "Spieler 5",
+        "Spieler 6",
+        "Spieler 7",
+        "Spieler 8",
+        "Spieler 9"
+    ],
+
+    homeLineup:[
+        "Spieler 1",
+        "Spieler 2",
+        "Spieler 3",
+        "Spieler 4",
+        "Spieler 5",
+        "Spieler 6",
+        "Spieler 7",
+        "Spieler 8",
+        "Spieler 9"
+    ],
+
+    history:[]
+};
+
+let undoStack=[];
+let pendingRunnerAction=null;
+
+
+function snapshot(){
+
+    undoStack.push(JSON.stringify(game));
+
+    if(undoStack.length>100)
+        undoStack.shift();
+}
+
+
+function undo(){
+
+    if(!undoStack.length){
+        alert("Kein Spielzug zum Rückgängigmachen.");
+        return;
+    }
+
+    game=JSON.parse(undoStack.pop());
+
+    update();
+}
+
+
+function runs(){
+
+    return game.half==="TOP"
+        ? game.awayRuns
+        : game.homeRuns;
+}
+
+
+function team(){
+
+    return game.half==="TOP"
+        ? "away"
+        : "home";
+}
+
+
+function addHistory(text){
+
+    game.history.unshift(
+        `${game.inning} ${game.half} – ${text}`
+    );
+
+    if(game.history.length>100)
+        game.history.pop();
+}
+
+
+function resetCount(){
+
+    game.balls=0;
+    game.strikes=0;
+}
+
+
+function addRun(){
+
+    const r=runs();
+
+    while(r.length<game.inning)
+        r.push(0);
+
+    r[game.inning-1]++;
+}
+
+
+function advanceBatter(){
+
+    const t=team();
+
+    game[t+"Batter"]++;
+
+    if(game[t+"Batter"]>=game[t+"Lineup"].length)
+        game[t+"Batter"]=0;
+}
+
+
+function nextBatter(){
+
+    snapshot();
+
+    resetCount();
+
+    advanceBatter();
+
+    update();
+}
+
+
+function addOut(){
+
+    game.outs++;
+    resetCount();
+
+    if(game.outs>=3){
+
+        game.outs=0;
+
+        game.bases={
+            1:false,
+            2:false,
+            3:false
+        };
+
+        if(game.half==="TOP"){
+
+            game.half="BOTTOM";
+
+        }else{
+
+            game.half="TOP";
+            game.inning++;
+        }
+
+        addHistory("3 Outs – Halb-Inning beendet");
+    }
+}
+
+
+function scoreRunnerFrom3(){
+
+    if(game.bases[3]){
+
+        addRun();
+        game.bases[3]=false;
+
+        return true;
+    }
+
+    return false;
+}
+
+
+/*
+    SINGLE
+*/
+
+function single(){
+
+    snapshot();
+
+    game.pitches++;
+
+    if(team()==="away")
+        game.awayHits++;
+    else
+        game.homeHits++;
+
+    addHistory("SINGLE");
+
+    /*
+       Runner von 3B punktet.
+       Runner von 2B kommt automatisch auf 3B.
+       Runner von 1B kommt automatisch auf 2B.
+    */
+
+    if(game.bases[3])
+        addRun();
+
+    game.bases[3]=game.bases[2];
+    game.bases[2]=game.bases[1];
+    game.bases[1]=true;
+
+    resetCount();
+
+    advanceBatter();
+
+    update();
+}
+
+
+/*
+    DOUBLE
+*/
+
+function doubleHit(){
+
+    snapshot();
+
+    game.pitches++;
+
+    if(team()==="away")
+        game.awayHits++;
+    else
+        game.homeHits++;
+
+    addHistory("DOUBLE");
+
+    if(game.bases[3])
+        addRun();
+
+    if(game.bases[2])
+        addRun();
+
+    game.bases[3]=game.bases[1];
+    game.bases[2]=true;
+    game.bases[1]=false;
+
+    resetCount();
+
+    advanceBatter();
+
+    update();
+}
+
+
+/*
+    TRIPLE
+*/
+
+function triple(){
+
+    snapshot();
+
+    game.pitches++;
+
+    if(team()==="away")
+        game.awayHits++;
+    else
+        game.homeHits++;
+
+    addHistory("TRIPLE");
+
+    if(game.bases[1]) addRun();
+    if(game.bases[2]) addRun();
+    if(game.bases[3]) addRun();
+
+    game.bases={
+        1:false,
+        2:false,
+        3:true
+    };
+
+    resetCount();
+
+    advanceBatter();
+
+    update();
+}
+
+
+/*
+    HOME RUN
+*/
+
+function homeRun(){
+
+    snapshot();
+
+    game.pitches++;
+
+    if(team()==="away")
+        game.awayHits++;
+    else
+        game.homeHits++;
+
+    let score=1;
+
+    if(game.bases[1]) score++;
+    if(game.bases[2]) score++;
+    if(game.bases[3]) score++;
+
+    for(let i=0;i<score;i++)
+        addRun();
+
+    game.bases={
+        1:false,
+        2:false,
+        3:false
+    };
+
+    addHistory(`HOME RUN – ${score} Run(s)`);
+
+    resetCount();
+
+    advanceBatter();
+
+    update();
+}
+
+
+/*
+    WALK
+*/
+
+function walk(){
+
+    snapshot();
+
+    game.pitches++;
+
+    addHistory("WALK");
+
+    /*
+       Force-Logik.
+    */
+
+    if(game.bases[1]){
+
+        if(game.bases[2]){
+
+            if(game.bases[3]){
+
+                addRun();
+
+            }
+
+            game.bases[3]=true;
+
+        }
+
+        game.bases[2]=true;
+    }
+
+    game.bases[1]=true;
+
+    resetCount();
+
+    advanceBatter();
+
+    update();
+}
+
+
+/*
+    STRIKEOUT
+*/
+
+function strikeout(){
+
+    snapshot();
+
+    game.pitches++;
+
+    addHistory("STRIKEOUT");
+
+    addOut();
+
+    advanceBatter();
+
+    update();
+}
+
+
+/*
+    GROUNDOUT
+*/
+
+function groundout(){
+
+    snapshot();
+
+    game.pitches++;
+
+    addHistory("GROUNDOUT");
+
+    addOut();
+
+    advanceBatter();
+
+    update();
+}
+
+
+/*
+    FLYOUT
+*/
+
+function flyout(){
+
+    snapshot();
+
+    game.pitches++;
+
+    addHistory("FLYOUT");
+
+    /*
+       Bei Runner auf 3B fragen wir,
+       ob er tag-up macht.
+    */
+
+    if(game.bases[3]){
+
+        pendingRunnerAction="flyout";
+        document.getElementById("runnerModal")
+            .classList.add("show");
+
+        return;
+    }
+
+    addOut();
+    advanceBatter();
+
+    update();
+}
+
+
+/*
+    SAC FLY
+*/
+
+function sacFly(){
+
+    snapshot();
+
+    game.pitches++;
+
+    if(!game.bases[3]){
+
+        alert("Für einen Sac Fly muss ein Runner auf 3B sein.");
+
+        undoStack.pop();
+
+        return;
+    }
+
+    addRun();
+
+    game.bases[3]=false;
+
+    addHistory("SAC FLY – Run");
+
+    addOut();
+
+    advanceBatter();
+
+    update();
+}
+
+
+/*
+    ERROR
+*/
+
+function errorPlay(){
+
+    snapshot();
+
+    game.pitches++;
+
+    if(team()==="away")
+        game.homeErrors++;
+    else
+        game.awayErrors++;
+
+    addHistory("ERROR");
+
+    /*
+       Batter erreicht 1B.
+       Runner werden eine Base weitergeschoben.
+    */
+
+    if(game.bases[3])
+        addRun();
+
+    game.bases[3]=game.bases[2];
+    game.bases[2]=game.bases[1];
+    game.bases[1]=true;
+
+    resetCount();
+
+    advanceBatter();
+
+    update();
+}
+
+
+/*
+    BALL
+*/
+
+function ball(){
+
+    snapshot();
+
+    game.balls++;
+    game.pitches++;
+
+    addHistory("BALL");
+
+    if(game.balls>=4){
+
+        game.balls=0;
+        game.strikes=0;
+
+        addHistory("WALK");
+
+        /*
+           Walk-Logik
+        */
+
+        if(game.bases[1]){
+
+            if(game.bases[2]){
+
+                if(game.bases[3])
+                    addRun();
+
+                game.bases[3]=true;
+            }
+
+            game.bases[2]=true;
+        }
+
+        game.bases[1]=true;
+
+        advanceBatter();
+    }
+
+    update();
+}
+
+
+/*
+    STRIKE
+*/
+
+function strike(){
+
+    snapshot();
+
+    game.strikes++;
+    game.pitches++;
+
+    addHistory("STRIKE");
+
+    if(game.strikes>=3){
+
+        game.strikes=0;
+        game.balls=0;
+
+        addHistory("STRIKEOUT");
+
+        addOut();
+
+        advanceBatter();
+    }
+
+    update();
+}
+
+
+/*
+    FOUL
+*/
+
+function foul(){
+
+    snapshot();
+
+    game.pitches++;
+
+    if(game.strikes<2)
+        game.strikes++;
+
+    addHistory("FOUL");
+
+    update();
+}
+
+
+/*
+    MANUELLER OUT
+*/
+
+function manualOut(){
+
+    snapshot();
+
+    game.pitches++;
+
+    addHistory("OUT");
+
+    addOut();
+
+    advanceBatter();
+
+    update();
+}
+
+
+/*
+    HALB-INNING
+*/
+
+function changeHalf(){
+
+    snapshot();
+
+    game.balls=0;
+    game.strikes=0;
+    game.outs=0;
+
+    game.bases={
+        1:false,
+        2:false,
+        3:false
+    };
+
+    if(game.half==="TOP"){
+
+        game.half="BOTTOM";
+
+    }else{
+
+        game.half="TOP";
+        game.inning++;
+    }
+
+    addHistory("Halb-Inning manuell gewechselt");
+
+    update();
+}
+
+
+/*
+    BASE MANUELL
+*/
+
+function toggleBase(base){
+
+    snapshot();
+
+    game.bases[base]=!game.bases[base];
+
+    update();
+}
+
+
+/*
+    RUNNER-MODAL
+*/
+
+function runnerScores(){
+
+    document.getElementById("runnerModal")
+        .classList.remove("show");
+
+    if(pendingRunnerAction==="flyout"){
+
+        addRun();
+
+        game.bases[3]=false;
+
+        addHistory("FLYOUT – Runner tagt und punktet");
+
+        addOut();
+
+        advanceBatter();
+    }
+
+    pendingRunnerAction=null;
+
+    update();
+}
+
+
+function runnerStays(){
+
+    document.getElementById("runnerModal")
+        .classList.remove("show");
+
+    if(pendingRunnerAction==="flyout"){
+
+        addHistory("FLYOUT – Runner bleibt auf 3B");
+
+        addOut();
+
+        advanceBatter();
+    }
+
+    pendingRunnerAction=null;
+
+    update();
+}
+
+
+/*
+    LINEUP
+*/
+
+function addPlayer(t){
+
+    snapshot();
+
+    game[t+"Lineup"].push(
+        "Spieler "+(game[t+"Lineup"].length+1)
+    );
+
+    update();
+}
+
+
+function selectBatter(t,index){
+
+    snapshot();
+
+    game[t+"Batter"]=index;
+
+    update();
+}
+
+
+function updateLineup(t){
+
+    const box=document.getElementById(t+"Lineup");
+
+    box.innerHTML="";
+
+    game[t+"Lineup"].forEach((player,index)=>{
+
+        const row=document.createElement("div");
+
+        row.className="player";
+
+        if(game[t+"Batter"]===index)
+            row.classList.add("active-player");
+
+        const input=document.createElement("input");
+
+        input.value=player;
+
+        input.onchange=()=>{
+
+            game[t+"Lineup"][index]=input.value;
+
+            update();
+        };
+
+        const button=document.createElement("button");
+
+        button.textContent=
+            game[t+"Batter"]===index
+            ?"⚾"
+            :"○";
+
+        button.onclick=()=>{
+            selectBatter(t,index);
+        };
+
+        row.append(input,button);
+
+        box.appendChild(row);
+    });
+}
+
+
+/*
+    SCOREBOARD
+*/
+
+function updateScoreboard(){
+
+    const header=document.getElementById("scoreHeader");
+    const away=document.getElementById("awayRow");
+    const home=document.getElementById("homeRow");
+
+    while(header.children.length>1)
+        header.removeChild(header.lastChild);
+
+    while(away.children.length>1)
+        away.removeChild(away.lastChild);
+
+    while(home.children.length>1)
+        home.removeChild(home.lastChild);
+
+    const innings=Math.max(
+        9,
+        game.inning,
+        game.awayRuns.length,
+        game.homeRuns.length
+    );
+
+    while(game.awayRuns.length<innings)
+        game.awayRuns.push(0);
+
+    while(game.homeRuns.length<innings)
+        game.homeRuns.push(0);
+
+    for(let i=0;i<innings;i++){
+
+        const th=document.createElement("th");
+
+        th.textContent=i+1;
+
+        if(i+1===game.inning)
+            th.classList.add("active");
+
+        header.appendChild(th);
+
+        const a=document.createElement("td");
+        const h=document.createElement("td");
+
+        a.textContent=game.awayRuns[i];
+        h.textContent=game.homeRuns[i];
+
+        if(i+1===game.inning){
+
+            a.classList.add("active");
+            h.classList.add("active");
+        }
+
+        away.appendChild(a);
+        home.appendChild(h);
+    }
+
+    ["R","H","E"].forEach(x=>{
+
+        const th=document.createElement("th");
+
+        th.textContent=x;
+
+        header.appendChild(th);
+    });
+
+    const awayTotal=
+        game.awayRuns.reduce((a,b)=>a+b,0);
+
+    const homeTotal=
+        game.homeRuns.reduce((a,b)=>a+b,0);
+
+    let a=document.createElement("td");
+    a.className="total";
+    a.textContent=awayTotal;
+
+    let h=document.createElement("td");
+    h.className="total";
+    h.textContent=homeTotal;
+
+    away.appendChild(a);
+    home.appendChild(h);
+
+    a=document.createElement("td");
+    a.textContent=game.awayHits;
+    away.appendChild(a);
+
+    h=document.createElement("td");
+    h.textContent=game.homeHits;
+    home.appendChild(h);
+
+    a=document.createElement("td");
+    a.textContent=game.awayErrors;
+    away.appendChild(a);
+
+    h=document.createElement("td");
+    h.textContent=game.homeErrors;
+    home.appendChild(h);
+}
+
+
+/*
+    UPDATE
+*/
+
+function update(){
+
+    const awayName=
+        document.getElementById("awayName").value;
+
+    const homeName=
+        document.getElementById("homeName").value;
+
+    document.getElementById("inning").textContent=
+        game.inning;
+
+    document.getElementById("half").textContent=
+        game.half;
+
+    document.getElementById("batting").textContent=
+        game.half==="TOP"
+        ?awayName
+        :homeName;
+
+    document.getElementById("balls").textContent=
+        game.balls;
+
+    document.getElementById("strikes").textContent=
+        game.strikes;
+
+    document.getElementById("outs").textContent=
+        game.outs;
+
+    document.getElementById("pitches").textContent=
+        game.pitches;
+
+    document.getElementById("count").textContent=
+        `${game.balls}-${game.strikes}`;
+
+    document.getElementById("awayTitle").textContent=
+        awayName;
+
+    document.getElementById("homeTitle").textContent=
+        homeName;
+
+    const t=team();
+
+    document.getElementById("batterName").textContent=
+        game[t+"Lineup"][game[t+"Batter"]] || "";
+
+    document.getElementById("pitcher").value=
+        game.pitcher || "";
+
+    [1,2,3].forEach(base=>{
+
+        document.getElementById("base"+base)
+        .classList.toggle(
+            "occupied",
+            game.bases[base]
+        );
+    });
+
+    updateScoreboard();
+
+    updateLineup("away");
+    updateLineup("home");
+
+    const history=
+        document.getElementById("history");
+
+    history.innerHTML="";
+
+    game.history.forEach(x=>{
+
+        const div=document.createElement("div");
+
+        div.textContent=x;
+
+        history.appendChild(div);
+    });
+}
+
+
+/*
+    SPEICHERN
+*/
+
+function saveGame(){
+
+    const data={
+
+        game:game,
+
+        awayName:
+            document.getElementById("awayName").value,
+
+        homeName:
+            document.getElementById("homeName").value
+
+    };
+
+    localStorage.setItem(
+        "baseballScorekeeper2",
+        JSON.stringify(data)
+    );
+
+    alert("Spiel gespeichert.");
+}
+
+
+/*
+    LADEN
+*/
+
+function loadGame(){
+
+    const saved=
+        localStorage.getItem(
+            "baseballScorekeeper2"
+        );
+
+    if(!saved){
+
+        alert("Kein gespeichertes Spiel vorhanden.");
+
+        return;
+    }
+
+    const data=JSON.parse(saved);
+
+    game=data.game;
+
+    document.getElementById("awayName").value=
+        data.awayName || "AWAY";
+
+    document.getElementById("homeName").value=
+        data.homeName || "HOME";
+
+    undoStack=[];
+
+    update();
+
+    alert("Spiel geladen.");
+}
+
+
+/*
+    NEUES SPIEL
+*/
+
+function newGame(){
+
+    if(!confirm(
+        "Neues Spiel beginnen?\n"+
+        "Der aktuelle Spielstand wird zurückgesetzt."
+    ))
+        return;
+
+    undoStack=[];
+
+    game={
+
+        inning:1,
+        half:"TOP",
+
+        balls:0,
+        strikes:0,
+        outs:0,
+        pitches:0,
+
+        awayRuns:Array(9).fill(0),
+        homeRuns:Array(9).fill(0),
+
+        awayHits:0,
+        homeHits:0,
+
+        awayErrors:0,
+        homeErrors:0,
+
+        bases:{
+            1:false,
+            2:false,
+            3:false
+        },
+
+        awayBatter:0,
+        homeBatter:0,
+
+        pitcher:"Pitcher 1",
+
+        awayLineup:[
+            "Spieler 1",
+            "Spieler 2",
+            "Spieler 3",
+            "Spieler 4",
+            "Spieler 5",
+            "Spieler 6",
+            "Spieler 7",
+            "Spieler 8",
+            "Spieler 9"
+        ],
+
+        homeLineup:[
+            "Spieler 1",
+            "Spieler 2",
+            "Spieler 3",
+            "Spieler 4",
+            "Spieler 5",
+            "Spieler 6",
+            "Spieler 7",
+            "Spieler 8",
+            "Spieler 9"
+        ],
+
+        history:[]
+    };
+
+    update();
+}
+
+
+update();
+
+</script>
+
+</body>
+</html>
